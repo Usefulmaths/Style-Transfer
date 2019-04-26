@@ -11,9 +11,16 @@ class ContentLoss(nn.Module):
 
     def __init__(self, target,):
         super(ContentLoss, self).__init__()
+
+        # The target content feature maps
         self.target = target.detach()
 
     def forward(self, image):
+        '''
+        Calculates the mean-squared error between
+        the input image feature maps and the 
+        target content feature maps.
+        '''
         loss = F.mse_loss(image, self.target)
         return loss
 
@@ -26,14 +33,26 @@ class StyleLoss(nn.Module):
 
     def __init__(self, target_feature):
         super(StyleLoss, self).__init__()
+
+        # Calculates the gram matrix for the
+        # target feature maps.
         self.target = self.gram_matrix(target_feature).detach()
 
     def forward(self, image):
+        '''
+        Calculates the mean-squared error between
+        the input image feature gram matrix and
+        the style image feature gram matrix.
+        '''
         G = self.gram_matrix(image)
         loss = F.mse_loss(G, self.target)
         return loss
 
     def gram_matrix(self, image):
+        '''
+        Calculates the gram matrix of the feature maps
+        given feature maps in layer L of CNN.
+        '''
         batch, depth, height, width = image.size()
 
         features_batch = image.view(batch, depth, height * width)

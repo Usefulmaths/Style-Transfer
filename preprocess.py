@@ -2,19 +2,42 @@ import torch
 import torchvision.transforms as transforms
 from PIL import Image
 
-content_image_paths = ['/content/drive/My Drive/images/content/liam_cove.jpg']
-style_image_paths = [
-    '/content/drive/My Drive/images/style/Vincent-van-Gogh-The-Starry-Night-1889-2.jpg']
-
 
 class Preprocessor(object):
+    '''
+    A class that deals with the preprocessing of
+    the images.
+    '''
+
     def __init__(self):
         return
 
     def retrieve_image(self, path):
-        return Image.open(path)
+        '''
+        Given a path to a file, opens up the image.
+
+        Arguments:
+            path: path to the file
+
+        Returns:
+            image: the corresponding PIL image
+
+        '''
+        image = Image.open(path)
+
+        return image
 
     def retrieve_images(self, paths):
+        '''
+        Given a list of paths, creates a list
+        of PIL images.
+
+        Arguments: 
+            paths: a list of image paths
+
+        Returns:
+            images: a list of PIL images
+        '''
         images = []
 
         for path in paths:
@@ -48,6 +71,18 @@ class Preprocessor(object):
         return transformed_image
 
     def transform_content_images(self, content_images, num_styles, depth, width, height):
+        '''
+        Creates a tensor corresponding to the content image. The dimensions
+        of this tensor is [num_styles, depth, width, height], which allows
+        a single image to style transferred multiple times in the same batch.
+
+        Arguments:
+            content_images: the content images
+            num_styles: the number of styles that are going to be applied
+            depth: the number of channels in an image
+            width: the width of the image
+            height: the height of the image
+        '''
         content_tensor = torch.zeros(num_styles, depth, width, height)
 
         for i in range(num_styles):
@@ -58,6 +93,16 @@ class Preprocessor(object):
         return content_tensor
 
     def transform_style_images(self, style_images, num_styles, depth, width, height):
+        '''
+        Creates a tensor corresponding to the style images.
+
+        Arguments:
+            style_images: the style images
+            num_styles: the number of styles
+            depth: the number of channels in the style images
+            width: the width of the style images
+            height: the height of the style images.
+        '''
         style_tensor = torch.zeros(num_styles, depth, width, height)
 
         for i in range(num_styles):
@@ -68,6 +113,19 @@ class Preprocessor(object):
         return style_tensor
 
     def preprocess(self, content_paths, style_paths, image_scale):
+        '''
+        Preprocesses the content and style images (resizes and 
+        converts into tensors ready to be fed into a neural network).
+
+        Arguments:
+            content_paths: the paths to the content image
+            style_paths: the paths to the style images
+            image_scale: a scale factor to resize the images
+
+        returns:
+            content_tensor: the content image tensor
+            style_tensor: the style image tensor
+        '''
         content_images = self.retrieve_images(content_paths)
         style_images = self.retrieve_images(style_paths)
 

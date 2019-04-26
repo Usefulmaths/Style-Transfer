@@ -14,7 +14,18 @@ class StyleTransfer(object):
         self.reset_cache()
 
     def load_pretrained_model(self, device):
-        return vgg19(pretrained=True).features.to(device).eval()
+        '''
+        Loads a pretrained model (VGG19) from torchvision.
+
+        Arguments:
+            device: the device to load the model on.
+
+        Returns: 
+            model: pretrained model
+
+        '''
+        model = vgg19(pretrained=True).features.to(device).eval()
+        return model
 
     def extract_layers(self, model, indices):
         '''
@@ -34,6 +45,15 @@ class StyleTransfer(object):
         return models
 
     def retrieve_tensors(self, content_paths, style_paths, image_scale):
+        '''
+        Given content image and style image paths, retrieves
+        the images and converts into PyTorch tensors.
+
+        Arguments:
+            content_paths: the path of the content image
+            style_paths: the path of the style images
+            image_scale: a scale factor to resize images
+        '''
         preprocessor = Preprocessor()
         content_tensor, style_tensor = preprocessor.preprocess(
             content_paths,
@@ -44,6 +64,17 @@ class StyleTransfer(object):
         return content_tensor, style_tensor
 
     def retrieve_models(self, content_indices, style_indices, device):
+        '''
+        Extracts subsets of a pretrained model up to specified 
+        indices for both the content and style images.
+
+        Arguments:
+            content_indices: the indices of conv layers used
+                             for content images.
+            style_indices: the indices of the conv layers used
+                           for the style images.
+            device: the device to load the models on.
+        '''
         model = self.load_pretrained_model(device)
 
         content_models = self.extract_layers(model, content_indices)
@@ -52,7 +83,21 @@ class StyleTransfer(object):
         return content_models, style_models
 
     def retrieve_target_features(self, content_images, style_images, content_models, style_models):
-         # Pass the content image through each content model
+        '''
+        Extracts the target content and style feature maps from the pretrained
+        models.
+
+        Arguments:
+            content_images: the content images
+            style_images: the style images
+            content_models: the content models
+            style_models: the style_models
+
+        Returns:
+            target_contents: the target feature maps for the content images
+            target_styles: the target feature maps for the style images
+        '''
+        # Pass the content image through each content model
         target_contents = [content_model(content_images)
                            for content_model in content_models]
 
@@ -63,6 +108,18 @@ class StyleTransfer(object):
         return target_contents, target_styles
 
     def retrieve_loss_functions(self, target_contents, target_styles):
+        '''
+        Calculates both the content losses and style losses for each
+        of the models used.
+
+        Arguments:
+            target_contents: the target feature maps for the content images
+            target_styles: the target feature maps for the style images
+
+        Returns:
+            content_losses: a list of content losses
+            style_losses: a list of style losses
+        '''
         # For each feature map, instantiate a ContentLoss object
         content_losses = [ContentLoss(target_content)
                           for target_content in target_contents]
@@ -83,6 +140,24 @@ class StyleTransfer(object):
                  style_weight=1e7,
                  iterations=1000,
                  early_stopping=10):
+        '''
+        Performs style transfer between a content image and multiple
+        specified style images.
+
+        Arguments:
+            content_paths: the path to the content images
+            style_paths: the path to the style images
+            content_indices: the indices of the conv layers for the content models
+            style_indices: the indices of the conv layers for the style models
+            image_scale: scale factor for the images
+            content_weight: weighting factor for the content loss
+            style_weight: the weighting factor for the style loss
+            iterations: number of iterations to minimise loss
+            early_stopping: early stopping criteria
+
+        Returns:
+            self.best_output: style transferred image
+        '''
 
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -163,6 +238,9 @@ class StyleTransfer(object):
         return self.best_output
 
     def reset_cache(self):
+        '''
+        Resets temporary variable cache
+        '''
         self.best_loss = 10e10
         self.best_output = None
         self.early_stop_counter = 0
