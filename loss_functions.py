@@ -3,6 +3,19 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
+class TotalVariationLoss(nn.Module):
+    '''
+    A class that represents the total variation loss function.
+    '''
+
+    def forward(self, image):
+        '''
+        Calculates the total variation of the image, (the difference between neighbouring pixels)
+        '''
+        return 0.5 * (torch.abs(image[:, 1:, :] - image[:, :-1, :]).mean() +
+                      torch.abs(image[:, :, 1:] - image[:, :, :-1]).mean())
+
+
 class ContentLoss(nn.Module):
     '''
     A class that represents the content

@@ -2,7 +2,7 @@ import torch
 import torch.optim as optim
 from torchvision.models import vgg19
 from preprocess import Preprocessor
-from loss_functions import ContentLoss, StyleLoss
+from loss_functions import ContentLoss, StyleLoss, TotalVariationLoss
 
 
 class StyleTransfer(object):
@@ -138,6 +138,7 @@ class StyleTransfer(object):
                  image_scale=1,
                  content_weight=1,
                  style_weight=1e7,
+                 tv_weight=10,
                  iterations=1000,
                  early_stopping=10):
         '''
@@ -204,6 +205,7 @@ class StyleTransfer(object):
                 optimiser.zero_grad()
                 style_loss = 0
                 content_loss = 0
+                tv_loss = 0
 
                 for i in range(len(input_style_features)):
                     style_loss += style_losses[i](input_style_features[i])
@@ -212,7 +214,10 @@ class StyleTransfer(object):
                     content_loss += content_losses[i](
                         input_content_features[i])
 
-                total_loss = content_weight * content_loss + style_weight * style_loss
+                tv_loss = TotalVariationLoss()(input_tensor)
+
+                total_loss = content_weight * content_loss + \
+                    style_weight * style_loss + tv_weight * tv_loss
                 total_loss.backward()
 
                 if total_loss < self.best_loss:
@@ -224,8 +229,8 @@ class StyleTransfer(object):
                     self.early_stop_counter += 1
 
                 if (iteration + 1) % 100 == 0 or iteration + 1 == 1:
-                    print('Iteration: %d (ES: %d)\t Content Loss: %.4f\t Style Loss: %.7f\t Total Loss: %.7f' % (
-                        iteration + 1, self.early_stop_counter, content_loss, style_loss, total_loss))
+                    print('Iteration: %d (ES: %d)\t Content Loss: %.4f\t Style Loss: %.7f\t TV Loss: %.7f\t Total Loss: %.7f' % (
+                        iteration + 1, self.early_stop_counter, content_loss, style_loss, tv_loss, total_loss))
 
                 return total_loss
 
